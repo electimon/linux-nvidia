@@ -1127,7 +1127,6 @@ static const struct iio_info ltr501_info_no_irq = {
 	.read_raw = ltr501_read_raw,
 	.write_raw = ltr501_write_raw,
 	.attrs = &ltr501_attribute_group,
-	.driver_module = THIS_MODULE,
 };
 
 static const struct iio_info ltr501_info = {
@@ -1138,14 +1137,12 @@ static const struct iio_info ltr501_info = {
 	.write_event_value	= &ltr501_write_event,
 	.read_event_config	= &ltr501_read_event_config,
 	.write_event_config	= &ltr501_write_event_config,
-	.driver_module = THIS_MODULE,
 };
 
 static const struct iio_info ltr301_info_no_irq = {
 	.read_raw = ltr501_read_raw,
 	.write_raw = ltr501_write_raw,
 	.attrs = &ltr301_attribute_group,
-	.driver_module = THIS_MODULE,
 };
 
 static const struct iio_info ltr301_info = {
@@ -1156,7 +1153,6 @@ static const struct iio_info ltr301_info = {
 	.write_event_value	= &ltr501_write_event,
 	.read_event_config	= &ltr501_read_event_config,
 	.write_event_config	= &ltr501_write_event_config,
-	.driver_module = THIS_MODULE,
 };
 
 static struct ltr501_chip_info ltr501_chip_info_tbl[] = {
