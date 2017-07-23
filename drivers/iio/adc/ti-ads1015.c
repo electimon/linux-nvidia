@@ -481,14 +481,12 @@ static const struct attribute_group ads1115_attribute_group = {
 };
 
 static struct iio_info ads1015_info = {
-	.driver_module	= THIS_MODULE,
 	.read_raw	= ads1015_read_raw,
 	.write_raw	= ads1015_write_raw,
 	.attrs          = &ads1015_attribute_group,
 };
 
 static struct iio_info ads1115_info = {
-	.driver_module	= THIS_MODULE,
 	.read_raw	= ads1015_read_raw,
 	.write_raw	= ads1015_write_raw,
 	.attrs          = &ads1115_attribute_group,

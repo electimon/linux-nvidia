@@ -386,7 +386,6 @@ static const struct iio_chan_spec hi8435_channels[] = {
 };
 
 static const struct iio_info hi8435_info = {
-	.driver_module = THIS_MODULE,
 	.read_event_config = &hi8435_read_event_config,
 	.write_event_config = hi8435_write_event_config,
 	.read_event_value = &hi8435_read_event_value,

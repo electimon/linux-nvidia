@@ -609,7 +609,6 @@ static const struct attribute_group ina2xx_attribute_group = {
 };
 
 static const struct iio_info ina2xx_info = {
-	.driver_module = THIS_MODULE,
 	.attrs = &ina2xx_attribute_group,
 	.read_raw = ina2xx_read_raw,
 	.write_raw = ina2xx_write_raw,

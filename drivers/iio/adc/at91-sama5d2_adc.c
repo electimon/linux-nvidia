@@ -383,7 +383,6 @@ static int at91_adc_write_raw(struct iio_dev *indio_dev,
 static const struct iio_info at91_adc_info = {
 	.read_raw = &at91_adc_read_raw,
 	.write_raw = &at91_adc_write_raw,
-	.driver_module = THIS_MODULE,
 };
 
 static int at91_adc_probe(struct platform_device *pdev)
