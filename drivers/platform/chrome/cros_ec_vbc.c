@@ -130,7 +130,7 @@ static struct bin_attribute *cros_ec_vbc_bin_attrs[] = {
 	NULL
 };
 
-struct attribute_group cros_ec_vbc_attr_group = {
+static struct attribute_group cros_ec_vbc_attr_group = {
 	.name = "vbc",
 	.bin_attrs = cros_ec_vbc_bin_attrs,
 	.is_bin_visible = cros_ec_vbc_is_visible,
