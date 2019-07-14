@@ -1214,8 +1214,8 @@ static int tegra210_pg_powergate(int id)
 		goto exit_unlock;
 
 	if ((partition->refcount < 0) || !tegra210_pg_is_powered(id)) {
-		WARN(1, "Partition %s already powergated, refcount and status mismatch\n",
-		     partition->name);
+		pr_err("Partition %s already powergated, refcount  %d and status mismatch\n",
+		     partition->name, partition->refcount);
 		goto exit_unlock;
 	}
 
@@ -1239,8 +1239,8 @@ static int tegra210_pg_unpowergate(int id)
 		goto exit_unlock;
 
 	if (tegra210_pg_is_powered(id)) {
-		WARN(1, "Partition %s is already unpowergated, refcount and status mismatch\n",
-		     partition->name);
+		pr_err("Partition %s is already unpowergated, refcount %d and status mismatch\n",
+		     partition->name, partition->refcount);
 		goto exit_unlock;
 	}
 
@@ -1392,9 +1392,38 @@ static int tegra210_pg_init_refcount(void)
 	t210_pg_info[TEGRA210_POWER_DOMAIN_NVJPG].part_info->refcount +=
 		(tegra210_pg_is_powered(TEGRA210_POWER_DOMAIN_NVDEC) ? 1 : 0);
 
+	pr_err("Partition TEGRA210_POWER_DOMAIN_XUSBA, refcount %d and status mismatch\n",
+		t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBB].part_info->refcount);
+
+	pr_err("Partition TEGRA210_POWER_DOMAIN_XUSBB, refcount %d and status mismatch\n",
+		t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBA].part_info->refcount);
+
+	pr_err("Partition TEGRA210_POWER_DOMAIN_XUSBC, refcount %d and status mismatch\n",
+		t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBC].part_info->refcount);
+
+	if ((t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBA].part_info->refcount <= 0) & !tegra210_pg_is_powered(TEGRA210_POWER_DOMAIN_XUSBA))
+		t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBA].part_info->refcount = 1;
+
+	if ((t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBB].part_info->refcount <= 0) & !tegra210_pg_is_powered(TEGRA210_POWER_DOMAIN_XUSBB))
+		t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBB].part_info->refcount = 1;
+
+	if ((t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBC].part_info->refcount <= 0) & !tegra210_pg_is_powered(TEGRA210_POWER_DOMAIN_XUSBC))
+		t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBC].part_info->refcount = 1;
+
+	pr_err("Partition TEGRA210_POWER_DOMAIN_XUSBA, refcount %d and status mismatch\n",
+		t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBB].part_info->refcount);
+
+	pr_err("Partition TEGRA210_POWER_DOMAIN_XUSBB, refcount %d and status mismatch\n",
+		t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBA].part_info->refcount);
+
+	pr_err("Partition TEGRA210_POWER_DOMAIN_XUSBC, refcount %d and status mismatch\n",
+		t210_pg_info[TEGRA210_POWER_DOMAIN_XUSBC].part_info->refcount);
+
+//	if (!of_machine_is_compatible("google,smaug")) {
 	tegra210_pg_powergate_partition(TEGRA210_POWER_DOMAIN_XUSBA);
 	tegra210_pg_powergate_partition(TEGRA210_POWER_DOMAIN_XUSBB);
 	tegra210_pg_powergate_partition(TEGRA210_POWER_DOMAIN_XUSBC);
+//	}
 
 	return 0;
 }
