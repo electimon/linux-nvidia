@@ -18,7 +18,6 @@
  */
 
 #include <linux/mfd/core.h>
-#include <linux/mfd/cros_ec.h>
 #include <linux/module.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
