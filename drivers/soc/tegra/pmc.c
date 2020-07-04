@@ -203,6 +203,14 @@
 #define PMC_FUSE_CTRL_PS18_LATCH_SET    (1 << 8)
 #define PMC_FUSE_CTRL_PS18_LATCH_CLEAR  (1 << 9)
 
+/* Scratch 202: ChromeOS Reboot Reason */
+#define PMC_SCRATCH202				0x848
+#define  PMC_SCRATCH202_BOOTREASON_REBOOT	0x1
+#define  PMC_SCRATCH202_BOOTREASON_PANIC	0x2
+#define  PMC_SCRATCH202_BOOTREASON_WATCHDOG	0x3
+#define  PMC_SCRATCH202_BOOTREASON_THERMAL	0x4
+#define  PMC_SCRATCH202_BOOTREASON_MASK		0x7
+
 /* Scratch 250: Bootrom i2c command base */
 #define PMC_BR_COMMAND_BASE		0x908
 
@@ -1051,6 +1059,11 @@ static int tegra_pmc_restart_notify(struct notifier_block *this,
 	const char *cmd = data;
 	u32 value;
 
+	value = tegra_pmc_readl(PMC_SCRATCH202);
+	value &= ~PMC_SCRATCH202_BOOTREASON_MASK;
+	value |= PMC_SCRATCH202_BOOTREASON_REBOOT;
+	tegra_pmc_writel(value, PMC_SCRATCH202);
+
 	tegra_pmc_program_reboot_reason(cmd);
 
 	value = tegra_pmc_reg_readl(TEGRA_PMC_CNTRL);
@@ -1072,6 +1085,11 @@ static int tegra_pmc_panic_handler(struct notifier_block *this,
 
 	pmc_reg_val = tegra_pmc_reg_readl(TEGRA_PMC_SCRATCH37);
 	tegra_pmc_reg_writel((pmc_reg_val | KERNEL_PANIC_FLAG), TEGRA_PMC_SCRATCH37);
+
+	pmc_reg_val = tegra_pmc_readl(PMC_SCRATCH202);
+	pmc_reg_val &= ~PMC_SCRATCH202_BOOTREASON_MASK;
+	pmc_reg_val |= PMC_SCRATCH202_BOOTREASON_PANIC;
+	tegra_pmc_writel(pmc_reg_val, PMC_SCRATCH202);
 
 	return NOTIFY_DONE;
 }
