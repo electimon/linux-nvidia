@@ -82,11 +82,4 @@ struct mb_data {
 	u8 data[BPMP_MSG_DATA_SIZE];
 } __packed;
 
-
-int tegra_bpmp_send(int mrq, void *data, int sz);
-int tegra_bpmp_send_receive_atomic(int mrq, void *ob_data, int ob_sz,
-				   void *ib_data, int ib_sz);
-int tegra_bpmp_send_receive(int mrq, void *ob_data, int ob_sz,
-			    void *ib_data, int ib_sz);
-
 #endif /* __SOC_TEGRA_BPMP_H__ */
