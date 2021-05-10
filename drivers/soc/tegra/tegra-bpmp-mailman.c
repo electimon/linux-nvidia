@@ -90,7 +90,6 @@ struct tegra_bpmp_mbox_client {
 
 struct tegra_bpmp_mbox_client mbox_clients[BPMP_NR_CHANNEL];
 static bool connected;
-static DEFINE_SPINLOCK(lock);
 static void *shared_virt;
 static u32 shared_phys;
 static bool bpmp_suspended;
@@ -100,38 +99,6 @@ static void bpmp_handle_mail(int mrq, int ch);
 static struct tegra_bpmp_mbox_client *acquire_outbox_client(void)
 {
 	return &mbox_clients[smp_processor_id()];
-}
-
-static struct tegra_bpmp_mbox_client *acquire_thread_client(void)
-{
-	struct tegra_bpmp_mbox_client *found = NULL;
-	struct tegra_bpmp_mbox_client *cl;
-	unsigned long flags;
-	int i;
-
-	spin_lock_irqsave(&lock, flags);
-
-	for (i = 0; i < BPMP_NR_THREAD_CHAN; ++i) {
-		cl = &mbox_clients[i + THREAD_CHAN_OFFSET];
-
-		if (!cl->in_use) {
-			cl->in_use = true;
-			found = cl;
-			break;
-		}
-	}
-
-	spin_unlock_irqrestore(&lock, flags);
-	return found;
-}
-
-static void free_thread_client(struct tegra_bpmp_mbox_client *cl)
-{
-	unsigned long flags;
-
-	spin_lock_irqsave(&lock, flags);
-	cl->in_use = false;
-	spin_unlock_irqrestore(&lock, flags);
 }
 
 static int tegra_bpmp_read_response(struct tegra_bpmp_mbox_client *cl,
@@ -145,7 +112,7 @@ static int tegra_bpmp_read_response(struct tegra_bpmp_mbox_client *cl,
 	return resp->code;
 }
 
-int tegra_bpmp_send(int mrq, void *data, int sz)
+static int tegra_bpmp_send_smaug(int mrq, void *data, int sz)
 {
 	struct tegra_bpmp_mbox_client *cl;
 	struct tegra_bpmp_mbox_msg msg;
@@ -168,10 +135,9 @@ int tegra_bpmp_send(int mrq, void *data, int sz)
 	preempt_enable();
 	return ret;
 }
-EXPORT_SYMBOL(tegra_bpmp_send);
 
 /* NOTE: should be called with local irqs disabled */
-int tegra_bpmp_send_receive_atomic(int mrq, void *ob_data, int ob_sz,
+static int tegra_bpmp_send_receive_atomic_smaug(int mrq, void *ob_data, int ob_sz,
 				   void *ib_data, int ib_sz)
 {
 	struct tegra_bpmp_mbox_client *cl;
@@ -196,38 +162,6 @@ int tegra_bpmp_send_receive_atomic(int mrq, void *ob_data, int ob_sz,
 
 	return tegra_bpmp_read_response(cl, ib_data, ib_sz);
 }
-EXPORT_SYMBOL(tegra_bpmp_send_receive_atomic);
-
-int tegra_bpmp_send_receive(int mrq, void *ob_data, int ob_sz,
-			    void *ib_data, int ib_sz)
-{
-	struct tegra_bpmp_mbox_client *cl;
-	struct tegra_bpmp_mbox_msg msg;
-	int ret;
-
-	if (!connected)
-		return -ENODEV;
-
-	cl = acquire_thread_client();
-	if (!cl)
-		return -EBUSY;
-
-	msg.type = BPMP_MSG_TYPE_REQ;
-	msg.code = mrq;
-	msg.flags = BPMP_MSG_DO_ACK | BPMP_MSG_RING_DOORBELL;
-	msg.data = ob_data;
-	msg.size = ob_sz;
-
-	ret = mbox_send_message(cl->mbox_chan, &msg);
-	if (ret < 0)
-		return ret;
-
-	ret = tegra_bpmp_read_response(cl, ib_data, ib_sz);
-	free_thread_client(cl);
-
-	return ret;
-}
-EXPORT_SYMBOL(tegra_bpmp_send_receive);
 
 /* NOTE: this function may be called in irq context */
 static u32 tegra_bpmp_mail_readl(int ch, int offset)
@@ -323,7 +257,7 @@ static int tegra_bpmp_ping(struct device *dev)
 
 	local_irq_save(flags);
 	tm = ktime_get();
-	err = tegra_bpmp_send_receive_atomic(MRQ_PING,
+	err = tegra_bpmp_send_receive_atomic_smaug(MRQ_PING,
 					     &challenge, sizeof(challenge),
 					     &reply, sizeof(reply));
 	tm = ktime_sub(ktime_get(), tm);
@@ -341,7 +275,7 @@ static int tegra_bpmp_get_fwtag(void *fwtag)
 	int err;
 
 	spin_lock_irqsave(&bpmp->shared_memory_lock, flags);
-	err = tegra_bpmp_send_receive_atomic(MRQ_QUERY_TAG, &shared_phys,
+	err = tegra_bpmp_send_receive_atomic_smaug(MRQ_QUERY_TAG, &shared_phys,
 					     sizeof(shared_phys), NULL, 0);
 	if (!err)
 		memcpy(fwtag, shared_virt, FWTAG_SIZE);
@@ -618,7 +552,7 @@ static int tegra_bpmp_tolerate_idle(int cpu, int ccxtl, int scxtl)
 	data[1] = cpu_to_le32(ccxtl);
 	data[2] = cpu_to_le32(scxtl);
 
-	return tegra_bpmp_send(MRQ_TOLERATE_IDLE, data, sizeof(data));
+	return tegra_bpmp_send_smaug(MRQ_TOLERATE_IDLE, data, sizeof(data));
 }
 
 static int tegra_cpu_notify(struct notifier_block *nb, unsigned long action,
@@ -655,8 +589,8 @@ static int __maybe_unused tegra_bpmp_enable_suspend(int mode, int flags, bool sc
 	s32 mb[] = { cpu_to_le32(mode), cpu_to_le32(flags) };
 	s32 val = cpu_to_le32(scx_enable);
 
-	tegra_bpmp_send(MRQ_SCX_ENABLE, &val, sizeof(val));
-	tegra_bpmp_send(MRQ_ENABLE_SUSPEND, &mb, sizeof(mb));
+	tegra_bpmp_send_smaug(MRQ_SCX_ENABLE, &val, sizeof(val));
+	tegra_bpmp_send_smaug(MRQ_ENABLE_SUSPEND, &mb, sizeof(mb));
 	return 0;
 }
 
@@ -671,7 +605,7 @@ static int __maybe_unused tegra_bpmp_resume(struct device *dev)
 {
 	s32 val = 0;
 
-	tegra_bpmp_send(MRQ_SCX_ENABLE, &val, sizeof(val));
+	tegra_bpmp_send_smaug(MRQ_SCX_ENABLE, &val, sizeof(val));
 	bpmp_suspended = false;
 	return 0;
 }
