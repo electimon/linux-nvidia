@@ -20,7 +20,6 @@
 #ifndef _UAPI_LINUX_CROS_EC_DEV_H_
 #define _UAPI_LINUX_CROS_EC_DEV_H_
 
-#include <linux/bits.h>
 #include <linux/ioctl.h>
 #include <linux/types.h>
 
