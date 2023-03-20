@@ -299,13 +299,14 @@ static void cros_ec_sensors_register(struct cros_ec_dev *ec)
 	resp = (struct ec_response_motion_sense *)msg->data;
 	sensor_num = resp->dump.sensor_count;
 	/* Allocate 1 extra sensors in FIFO are needed */
-	sensor_cells = kzalloc(sizeof(struct mfd_cell) * (sensor_num + 1),
+	sensor_cells = kcalloc(sensor_num + 1, sizeof(struct mfd_cell),
 			       GFP_KERNEL);
 	if (sensor_cells == NULL)
 		goto error;
 
-	sensor_platforms = kzalloc(sizeof(struct cros_ec_sensor_platform) *
-		  (sensor_num + 1), GFP_KERNEL);
+	sensor_platforms = kcalloc(sensor_num + 1,
+				   sizeof(struct cros_ec_sensor_platform),
+				   GFP_KERNEL);
 	if (sensor_platforms == NULL)
 		goto error_platforms;
 
@@ -478,18 +479,22 @@ static const struct platform_device_id cros_ec_id[] = {
 };
 MODULE_DEVICE_TABLE(platform, cros_ec_id);
 
-static int ec_device_suspend(struct device *dev)
+static __maybe_unused int ec_device_suspend(struct device *dev)
 {
 	struct cros_ec_dev *ec = dev_get_drvdata(dev);
+
+	cros_ec_debugfs_suspend(ec);
 
 	lb_suspend(ec);
 
 	return 0;
 }
 
-static int ec_device_resume(struct device *dev)
+static __maybe_unused int ec_device_resume(struct device *dev)
 {
 	struct cros_ec_dev *ec = dev_get_drvdata(dev);
+
+	cros_ec_debugfs_resume(ec);
 
 	lb_resume(ec);
 
