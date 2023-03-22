@@ -43,7 +43,7 @@ static irqreturn_t ec_irq_handler(int irq, void *data)
 {
 	struct cros_ec_device *ec_dev = data;
 
-	ec_dev->last_event_time = cros_ec_get_time_ns();
+	ec_dev->last_event_time = ns_to_ktime(cros_ec_get_time_ns());
 
 	return IRQ_WAKE_THREAD;
 }

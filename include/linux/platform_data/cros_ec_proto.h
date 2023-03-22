@@ -242,9 +242,9 @@ int cros_ec_get_sensor_count(struct cros_ec_dev *ec);
  *
  * Return: ktime_t format since boot.
  */
-static inline ktime_t cros_ec_get_time_ns(void)
+static inline s64 cros_ec_get_time_ns(void)
 {
-	return ktime_get_boottime_ns();
+	return ktime_to_ns(ktime_get_boottime());
 }
 
 #endif /* __LINUX_CROS_EC_PROTO_H */

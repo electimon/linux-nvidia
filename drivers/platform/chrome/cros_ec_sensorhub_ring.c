@@ -129,8 +129,8 @@ static bool
 cros_ec_sensor_ring_process_event(struct cros_ec_sensorhub *sensorhub,
 				const struct ec_response_motion_sense_fifo_info
 				*fifo_info,
-				const ktime_t fifo_timestamp,
-				ktime_t *current_timestamp,
+				const s64 fifo_timestamp,
+				s64 *current_timestamp,
 				struct ec_response_motion_sensor_data *in,
 				struct cros_ec_sensors_ring_sample *out)
 {
@@ -149,8 +149,8 @@ cros_ec_sensor_ring_process_event(struct cros_ec_sensorhub *sensorhub,
 		 * if b is in a random point in time.
 		 */
 		new_timestamp = fifo_timestamp -
-				fifo_info->timestamp  * 1000 +
-				in->timestamp * 1000;
+				((s64)fifo_info->timestamp  * 1000) +
+				((s64)in->timestamp * 1000);
 
 		/*
 		 * The timestamp can be stale if we had to use the fifo
@@ -202,7 +202,7 @@ static void cros_ec_sensorhub_ring_handler(struct cros_ec_sensorhub *sensorhub)
 	struct ec_response_motion_sense_fifo_info *fifo_info =
 		sensorhub->fifo_info;
 	struct cros_ec_dev *ec = sensorhub->ec;
-	ktime_t fifo_timestamp, current_timestamp;
+	s64 fifo_timestamp, current_timestamp;
 	int i, j, number_data, ret;
 	struct ec_response_motion_sensor_data *in;
 	struct cros_ec_sensors_ring_sample *out, *last_out;
@@ -355,7 +355,7 @@ static int cros_ec_sensorhub_event(struct notifier_block *nb,
 	memcpy(sensorhub->fifo_info, &ec_dev->event_data.data.sensor_fifo.info,
 	       sizeof(*sensorhub->fifo_info));
 	sensorhub->fifo_timestamp[CROS_EC_SENSOR_NEW_TS] =
-		ec_dev->last_event_time;
+		ktime_to_ns(ec_dev->last_event_time);
 	cros_ec_sensorhub_ring_handler(sensorhub);
 
 	return NOTIFY_OK;

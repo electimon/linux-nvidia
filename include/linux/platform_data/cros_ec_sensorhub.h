@@ -85,7 +85,7 @@ struct cros_ec_sensorhub {
 
 	struct cros_ec_sensors_ring_sample *ring;
 
-	ktime_t fifo_timestamp[CROS_EC_SENSOR_ALL_TS];
+	s64 fifo_timestamp[CROS_EC_SENSOR_ALL_TS];
 	struct ec_response_motion_sense_fifo_info *fifo_info;
 	int fifo_size;
 
